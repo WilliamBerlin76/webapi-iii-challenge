@@ -6,7 +6,7 @@ const Users = require('./userDb.js');
 
 const Posts = require('../posts/postDb')
 
-router.post('/', (req, res) => {
+router.post('/', validateUser, (req, res) => {
     const body = req.body;
     console.log(body)
     Users.insert(body)
@@ -19,10 +19,9 @@ router.post('/', (req, res) => {
         })
 });
 
-router.post('/:id/posts', validateUserId, (req, res) => {
+router.post('/:id/posts', validateUserId, validatePost, (req, res) => {
     const body = req.body;
-    console.log(body)
-
+    
         Posts.insert(body)
             .then(post => {
                 res.status(201).json(post)
@@ -32,7 +31,6 @@ router.post('/:id/posts', validateUserId, (req, res) => {
                 res.status(500).json({error: 'could not add a new post'})
         })
         
-       
 });
 
 router.get('/', (req, res) => {
@@ -119,11 +117,25 @@ function validateUserId(req, res, next) {
 };
 
 function validateUser(req, res, next) {
-
+    const body = req.body;
+    if(!body){
+        res.status(400).json({message: 'missing user data'})
+    } else if (!body.name) {
+        res.status(400).json({message: 'missing required name field'})
+    } else{
+        next();
+    }
 };
 
 function validatePost(req, res, next) {
-
+    const body = req.body;
+    if(!body){
+        res.status(400).json({message: "missing post data"})
+    } else if (!body.text){
+        res.status(400).json({message: "missing reqired text field"})
+    } else {
+        next();
+    }
 };
 
 module.exports = router;
