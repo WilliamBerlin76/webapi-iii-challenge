@@ -19,8 +19,13 @@ function logger(req, res, next){
   
 };
 
+
+
 server.use(helmet());
 server.use(express.json());
 server.use(logger)
+
+server.use('/api/users', userRouter);
+server.use('/api/users/:id/posts', postRouter); 
 
 module.exports = server;
