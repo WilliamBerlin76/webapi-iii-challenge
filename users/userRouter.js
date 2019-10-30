@@ -19,17 +19,20 @@ router.post('/', (req, res) => {
         })
 });
 
-router.post('/:id/posts', (req, res) => {
+router.post('/:id/posts', validateUserId, (req, res) => {
     const body = req.body;
     console.log(body)
-    Posts.insert(body)
-        .then(post => {
-            res.status(201).json(post)
+
+        Posts.insert(body)
+            .then(post => {
+                res.status(201).json(post)
+            })
+            .catch(err => {
+                console.log(err)
+                res.status(500).json({error: 'could not add a new post'})
         })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({error: 'could not add a new post'})
-        })
+        
+       
 });
 
 router.get('/', (req, res) => {
@@ -45,12 +48,11 @@ router.get('/', (req, res) => {
         })
 });
 
-router.get('/:id', (req, res) => {
-    const id = req.params.id;
-    Users.getById(id)
+router.get('/:id', validateUserId, (req, res) => {
+    Users.getById({id: req.user})
         .then(user => {
-            !user ? res.status(404).json({message: 'that user does not exist'}) :
-            res.status(200).json({user})
+            // !user ? res.status(404).json({message: 'that user does not exist'}) :
+            res.status(200).json(req.user)
         })
         .catch(error => {
             console.log(error)
@@ -59,7 +61,7 @@ router.get('/:id', (req, res) => {
 
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', validateUserId, (req, res) => {
     const userId = req.params.id;
     Users.getUserPosts(userId)
         .then(posts => {
@@ -71,7 +73,7 @@ router.get('/:id/posts', (req, res) => {
         })
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateUserId, (req, res) => {
     const id = req.params.id;
     Users.remove(id)
         .then(user => {
@@ -83,7 +85,7 @@ router.delete('/:id', (req, res) => {
         })
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateUserId, (req, res) => {
     const id = req.params.id
     const body = req.body;
     Users.update(id, body)
@@ -99,7 +101,21 @@ router.put('/:id', (req, res) => {
 //custom middleware
 
 function validateUserId(req, res, next) {
-
+    const id = req.params.id
+    Users.getById(id)
+        .then(users => {
+            if(!users){
+                 res.status(400).json({message: "invalid user id"}) 
+            } else {
+                req.user = users;
+                console.log(req.user)
+                next();
+            }    
+        })
+        .catch(err => {
+            console.log('validation mid', err)
+            res.status(500).json({message: 'could not validate the id'})
+        })
 };
 
 function validateUser(req, res, next) {
